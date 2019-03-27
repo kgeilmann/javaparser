@@ -34,6 +34,7 @@ import com.github.javaparser.symbolsolver.model.resolution.TypeSolver;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -138,6 +139,8 @@ public class ReferenceTypeImpl extends ResolvedReferenceType {
             } else {
                 return false;
             }
+        } else if (other.isUnionType()) {
+            return other.asUnionType().getCommonAncestor().map(ancestor -> isAssignableBy(ancestor)).orElse(false);
         } else {
             return false;
         }

@@ -33,9 +33,12 @@ import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.net.ProtocolException;
 import java.nio.Buffer;
 import java.nio.CharBuffer;
+import java.nio.file.FileSystemException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,6 +56,9 @@ class ReferenceTypeTest {
     private ReferenceTypeImpl listOfWildcardSuperString;
     private ReferenceTypeImpl object;
     private ReferenceTypeImpl string;
+    private ReferenceTypeImpl ioException;
+    private ResolvedType unionWithIOExceptionAsCommonAncestor;
+    private ResolvedType unionWithThrowableAsCommonAncestor;
     private TypeSolver typeSolver;
 
     @BeforeEach
@@ -78,6 +84,15 @@ class ReferenceTypeTest {
         listOfWildcardSuperString = new ReferenceTypeImpl(
                 new ReflectionInterfaceDeclaration(List.class, typeSolver),
                 ImmutableList.of(ResolvedWildcard.superBound(string)), typeSolver);
+        ioException = new ReferenceTypeImpl(new ReflectionClassDeclaration(IOException.class, typeSolver), typeSolver);
+        unionWithIOExceptionAsCommonAncestor = new ResolvedUnionType(Arrays.asList(
+                new ReferenceTypeImpl(new ReflectionClassDeclaration(ProtocolException.class, typeSolver), typeSolver),
+                new ReferenceTypeImpl(new ReflectionClassDeclaration(FileSystemException.class, typeSolver), typeSolver)
+        ));
+        unionWithThrowableAsCommonAncestor = new ResolvedUnionType(Arrays.asList(
+                new ReferenceTypeImpl(new ReflectionClassDeclaration(ClassCastException.class, typeSolver), typeSolver),
+                new ReferenceTypeImpl(new ReflectionClassDeclaration(AssertionError.class, typeSolver), typeSolver)
+        ));
     }
 
     @Test
@@ -237,6 +252,12 @@ class ReferenceTypeTest {
         assertEquals(false, linkedListOfString.isAssignableBy(collectionOfString));
         assertEquals(false, linkedListOfString.isAssignableBy(listOfStrings));
         assertEquals(true, linkedListOfString.isAssignableBy(linkedListOfString));
+    }
+
+    @Test
+    void testIsAssignableByUnionType() {
+        assertEquals(true, ioException.isAssignableBy(unionWithIOExceptionAsCommonAncestor));
+        assertEquals(false, ioException.isAssignableBy(unionWithThrowableAsCommonAncestor));
     }
 
     @Test
